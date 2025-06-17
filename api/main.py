@@ -30,10 +30,10 @@ app.add_middleware(
 )
 
 
-app.include_router(auth_router, prefix="/auth", tags=['Auth'])
-app.include_router(task_router, prefix="/task", tags=["Tasks"])
-app.include_router(work_type_router, prefix="/workType")
-app.include_router(voltage_router, prefix="/voltage")
+app.include_router(auth_router, prefix="/api/auth", tags=['Auth'])
+app.include_router(task_router, prefix="/api/task", tags=["Tasks"])
+app.include_router(work_type_router, prefix="/api/workType")
+app.include_router(voltage_router, prefix="/api/voltage")
 
 
 @app.get('/')
@@ -41,4 +41,4 @@ def root_controller():
 	return {"status": "healthy"}
 
 if __name__ == "__main__":
-	uvicorn.run("main:app", host='127.0.0.1', port=8000, reload=True)
+	uvicorn.run("main:app", host='0.0.0.0', port=8000)

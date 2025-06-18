@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { FaUserPlus, FaEdit, FaTrashAlt, FaKey } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
-import config from '../config/config';
-import axios from 'axios';
+import {
+  FaUserPlus,
+  FaEdit,
+  FaTrashAlt,
+  FaKey,
+  FaUser,
+  FaIdCard,
+  FaUserTag,
+  FaSave,
+  FaTimes,
+  FaLock,
+} from 'react-icons/fa';
 import api from '../api';
 import Modal from '../components/Modal';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,8 +22,12 @@ const Dashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 8;
 
-  // États pour la gestion du mot de passe
+  // États pour les modals
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+
+  // États pour les formulaires
   const [selectedUser, setSelectedUser] = useState(null);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,13 +36,22 @@ const Dashboard = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [userForm, setUserForm] = useState({
+    username: '',
+    full_name: '',
+    password: '',
+    role: 'user',
+  });
+
+  const [formErrors, setFormErrors] = useState({});
+  const [formSuccess, setFormSuccess] = useState('');
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await api.get('/auth/users');
         setUsers(response.data);
       } catch (error) {
-        if (error.response?.status === 401) navigate('/login');
         setError(error.response?.data?.message || 'Ошибка загрузки');
       } finally {
         setLoading(false);
@@ -39,7 +59,7 @@ const Dashboard = () => {
     };
 
     fetchUsers();
-  }, [navigate]);
+  }, []);
 
   // Filtrage et pagination
   const filteredUsers = users.filter(
@@ -59,11 +79,7 @@ const Dashboard = () => {
   const handleDelete = async (userId) => {
     if (window.confirm('Подтвердить удаление пользователя?')) {
       try {
-        await axios.delete(config().deleteuser(userId), {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-          },
-        });
+        await api.delete(`/auth/${userId}`);
         setUsers(users.filter((user) => user.uid !== userId));
       } catch (error) {
         alert(`Ошибка: ${error.response?.data?.message || error.message}`);
@@ -111,8 +127,113 @@ const Dashboard = () => {
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+  // Ouvrir le modal de création
+  const openCreateModal = () => {
+    setUserForm({
+      username: '',
+      full_name: '',
+      password: '',
+      role: 'user',
+    });
+    setFormErrors({});
+    setFormSuccess('');
+    setCreateModalOpen(true);
+  };
+
+  // Ouvrir le modal d'édition
+  const openEditModal = (user) => {
+    setSelectedUser(user);
+    setUserForm({
+      username: user.username,
+      full_name: user.full_name,
+      role: user.role,
+      password: '', // Le mot de passe n'est pas pré-rempli
+    });
+    setFormErrors({});
+    setFormSuccess('');
+    setEditModalOpen(true);
+  };
+
+  // Gestion des changements dans les formulaires
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setUserForm({
+      ...userForm,
+      [name]: value,
+    });
+  };
+
+  // Validation du formulaire
+  const validateForm = () => {
+    const errors = {};
+
+    if (!userForm.username.trim()) {
+      errors.username = 'Логин обязателен';
+    }
+
+    if (!userForm.full_name.trim()) {
+      errors.full_name = 'Полное имя обязательно';
+    }
+
+    // Pour la création, le mot de passe est requis
+    if (createModalOpen && !userForm.password) {
+      errors.password = 'Пароль обязателен';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Créer un nouvel utilisateur
+  const createNewUser = async () => {
+    if (!validateForm()) return;
+
+    try {
+      const response = await api.post('/auth/signup', userForm);
+
+      // Mettre à jour la liste des utilisateurs
+      setUsers([...users, response.data.user]);
+
+      setFormSuccess('Пользователь успешно создан!');
+      setTimeout(() => {
+        setCreateModalOpen(false);
+        setFormSuccess('');
+      }, 1500);
+    } catch (error) {
+      setFormErrors({
+        general: error.response?.data?.detail || 'Ошибка создания пользователя',
+      });
+    }
+  };
+
+  // Mettre à jour un utilisateur
+  const updateUser = async () => {
+    if (!validateForm()) return;
+
+    try {
+      const response = await api.patch(`/auth/update/${selectedUser.uid}`, {
+        username: userForm.username,
+        full_name: userForm.full_name,
+        role: userForm.role,
+      });
+
+      // Mettre à jour la liste des utilisateurs
+      const updatedUsers = users.map((user) =>
+        user.uid === selectedUser.uid ? { ...user, ...response.data } : user,
+      );
+      setUsers(updatedUsers);
+
+      setFormSuccess('Данные пользователя обновлены!');
+      setTimeout(() => {
+        setEditModalOpen(false);
+        setFormSuccess('');
+      }, 1500);
+    } catch (error) {
+      setFormErrors({
+        general:
+          error.response?.data?.detail || 'Ошибка обновления пользователя',
+      });
+    }
   };
 
   const translateRole = (role) => {
@@ -163,7 +284,7 @@ const Dashboard = () => {
           {/* Header avec bouton et recherche */}
           <div className="p-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-100">
             <button
-              onClick={() => navigate('/create')}
+              onClick={openCreateModal}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors w-full md:w-auto"
             >
               <FaUserPlus />
@@ -275,7 +396,7 @@ const Dashboard = () => {
                             <FaKey />
                           </button>
                           <button
-                            onClick={() => navigate(`/edit-user/${user.uid}`)}
+                            onClick={() => openEditModal(user)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                             title="Редактировать"
                           >
@@ -329,15 +450,22 @@ const Dashboard = () => {
       </div>
 
       {/* Modal de changement de mot de passe */}
-      {/* Modal de changement de mot de passe */}
       <Modal
         isOpen={passwordModalOpen}
         onClose={() => setPasswordModalOpen(false)}
       >
         <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Изменить пароль для {selectedUser?.username}
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800">
+              Изменить пароль для {selectedUser?.username}
+            </h2>
+            <button
+              onClick={() => setPasswordModalOpen(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+          </div>
 
           {passwordSuccess ? (
             <div className="bg-green-50 p-3 rounded-lg text-green-700 mb-4">
@@ -413,6 +541,8 @@ const Dashboard = () => {
                   <p className="text-xs text-gray-500 mt-1">
                     Минимум 8 символов
                   </p>
+                </div>
+                <div>
                   <label
                     htmlFor="confirm-password"
                     className="block text-sm font-medium text-gray-700 mb-1"
@@ -489,6 +619,269 @@ const Dashboard = () => {
                   Сохранить пароль
                 </button>
               </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Modal de création d'utilisateur */}
+      <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)}>
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <FaUserTag className="text-purple-600" />
+              Создание пользователя
+            </h2>
+            <button
+              onClick={() => setCreateModalOpen(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          {formSuccess ? (
+            <div className="bg-green-50 p-3 rounded-lg flex items-center text-green-700 mb-4">
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {formSuccess}
+            </div>
+          ) : (
+            <>
+              {formErrors.general && (
+                <div className="bg-red-50 p-3 rounded-lg flex items-center text-red-700 mb-4">
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {formErrors.general}
+                </div>
+              )}
+
+              <form className="space-y-4">
+                <div className="relative">
+                  <FaUser className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="username"
+                    placeholder="Логин"
+                    className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={userForm.username}
+                    onChange={handleInputChange}
+                  />
+                  {formErrors.username && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.username}
+                    </p>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <FaIdCard className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="full_name"
+                    placeholder="Полное имя"
+                    className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={userForm.full_name}
+                    onChange={handleInputChange}
+                  />
+                  {formErrors.full_name && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.full_name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <FaLock className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="Пароль"
+                    className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={userForm.password}
+                    onChange={handleInputChange}
+                  />
+                  {formErrors.password && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.password}
+                    </p>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <FaUserTag className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+                  <select
+                    name="role"
+                    className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                    value={userForm.role}
+                    onChange={handleInputChange}
+                  >
+                    <option value="user">Обычный пользователь</option>
+                    <option value="admin">Администратор</option>
+                    <option value="guest">Гость</option>
+                    <option value="worker">Рабочий</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setCreateModalOpen(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="button"
+                    onClick={createNewUser}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <FaUserPlus />
+                    Создать
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Modal d'édition d'utilisateur */}
+      <Modal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)}>
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <FaUser className="text-purple-600" />
+              Редактирование пользователя
+            </h2>
+            <button
+              onClick={() => setEditModalOpen(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          {formSuccess ? (
+            <div className="bg-green-50 p-3 rounded-lg flex items-center text-green-700 mb-4">
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {formSuccess}
+            </div>
+          ) : (
+            <>
+              {formErrors.general && (
+                <div className="bg-red-50 p-3 rounded-lg flex items-center text-red-700 mb-4">
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {formErrors.general}
+                </div>
+              )}
+
+              <form className="space-y-4">
+                <div className="relative">
+                  <FaUser className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="username"
+                    placeholder="Логин"
+                    className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={userForm.username}
+                    onChange={handleInputChange}
+                  />
+                  {formErrors.username && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.username}
+                    </p>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <FaIdCard className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    name="full_name"
+                    placeholder="Полное имя"
+                    className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    value={userForm.full_name}
+                    onChange={handleInputChange}
+                  />
+                  {formErrors.full_name && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {formErrors.full_name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <FaUserTag className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+                  <select
+                    name="role"
+                    className="w-full pl-12 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                    value={userForm.role}
+                    onChange={handleInputChange}
+                  >
+                    <option value="admin">Администратор</option>
+                    <option value="user">Пользователь</option>
+                    <option value="guest">Гость</option>
+                    <option value="worker">Рабочий</option>
+                  </select>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setEditModalOpen(false)}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    type="button"
+                    onClick={updateUser}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <FaSave />
+                    Сохранить
+                  </button>
+                </div>
+              </form>
             </>
           )}
         </div>

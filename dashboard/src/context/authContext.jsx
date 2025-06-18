@@ -26,6 +26,22 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // AuthContext.js
+
+  const createUser = async (userData) => {
+    try {
+      const response = await api.post('/auth/signup', userData); // <-- adapte l'endpoint si besoin
+      return response.data;
+    } catch (error) {
+      console.error('User creation error:', error.response || error);
+
+      let errorMessage = 'Ошибка при создании пользователя';
+      if (error.response && error.response.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      throw new Error(errorMessage);
+    }
+  };
+
   const login = async (username, password) => {
     try {
       const response = await api.post('/auth/login', { username, password });
@@ -54,18 +70,10 @@ export const AuthProvider = ({ children }) => {
   // Ajout de la fonction de changement de mot de passe
   const changePassword = async (currentPassword, newPassword) => {
     try {
-      const response = await api.post(
-        '/auth/change-password',
-        {
-          current_password: currentPassword,
-          new_password: newPassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        },
-      );
+      const response = await api.post('/auth/change-password', {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
 
       return response.data;
     } catch (error) {
@@ -84,6 +92,17 @@ export const AuthProvider = ({ children }) => {
       throw new Error(errorMessage);
     }
   };
+
+  const deleteUser = async (userId) => {
+    try {
+      await api.delete(`/auth/${userId}`);
+      return true;
+    } catch (error) {
+      console.error('Erreur lors de la suppression :', error.response || error);
+      throw new Error('Ошибка при удалении пользователя');
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('access_token');
     setUser(null);
@@ -97,7 +116,16 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, hasPermission, changePassword }}
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        hasPermission,
+        changePassword,
+        createUser,
+        deleteUser,
+      }}
     >
       {!loading && children}
     </AuthContext.Provider>

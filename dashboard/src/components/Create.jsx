@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { FaUser, FaLock, FaIdCard, FaUserTag, FaSave } from 'react-icons/fa';
-import config from '../config/config';
+import { useAuth } from '../context/authContext';
 import { useNavigate } from 'react-router-dom';
 
 const CreateUser = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [userData, setUserData] = useState({
     username: '',
     full_name: '',
@@ -13,37 +14,27 @@ const CreateUser = () => {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { createUser } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
-      const uri = config().createuser;
-      const response = await fetch(uri, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-        body: JSON.stringify(userData),
+      await createUser(userData);
+      setSuccess('Пользователь успешно создан!');
+      setError('');
+      setUserData({
+        username: '',
+        full_name: '',
+        password: '',
+        role: 'user',
       });
-
-      if (response.ok) {
-        setSuccess('Пользователь успешно создан!');
-        setError('');
-        setUserData({
-          username: '',
-          full_name: '',
-          password: '',
-          role: 'user',
-        });
-        setTimeout(() => setSuccess(''), 3000);
-        navigate('/dashboard');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Ошибка при создании пользователя');
-      }
-    } catch (error) {
-      setError('Ошибка соединения с сервером');
+      setTimeout(() => setSuccess(''), 3000);
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -154,10 +145,42 @@ const CreateUser = () => {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+            className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-all duration-300 ${
+              isLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-600 to-blue-500 hover:shadow-lg text-white'
+            }`}
+            disabled={isLoading}
           >
-            <FaSave className="text-lg" />
-            Создать пользователя
+            {isLoading ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
+                Создание...
+              </>
+            ) : (
+              <>
+                <FaSave className="text-lg" />
+                Создать пользователя
+              </>
+            )}
           </button>
         </form>
       </div>

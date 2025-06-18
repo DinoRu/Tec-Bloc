@@ -1,4 +1,7 @@
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+import 'dayjs/locale/ru';
 import {
   FaUserShield,
   FaSignOutAlt,
@@ -14,6 +17,9 @@ import { useAuth } from '../context/authContext';
 import { useEffect, useState } from 'react';
 import api from '../api';
 
+dayjs.extend(customParseFormat);
+dayjs.locale('ru');
+
 function Home() {
   const { user, hasPermission, logout } = useAuth();
   const navigate = useNavigate();
@@ -22,15 +28,19 @@ function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [tasksPerPage] = useState(5);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCompletedTasks = async () => {
       try {
+        setLoading(true);
         const response = await api.get('/task/completed');
         setCompletedTasks(response.data);
         setFilteredTasks(response.data);
       } catch (error) {
         console.error('Ошибка при получении задач', error);
+      } finally {
+        setLoading(false);
       }
     };
     if (user) {
@@ -180,7 +190,34 @@ function Home() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {currentTasks.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan="8" className="px-6 py-8 text-center">
+                      <div className="flex justify-center items-center">
+                        <svg
+                          className="animate-spin h-8 w-8 text-blue-600"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v8H4z"
+                          ></path>
+                        </svg>
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentTasks.length === 0 ? (
                   <tr>
                     <td
                       colSpan="8"
@@ -216,13 +253,8 @@ function Home() {
                         {task.voltage} КВ
                       </td>
                       <td className="px-6 py-4 text-gray-700">
-                        {new Date(task.completion_date).toLocaleDateString(
-                          'ru-RU',
-                          {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          },
+                        {dayjs(task.completion_date, 'DD-MM-YYYY HH:mm').format(
+                          'DD MMM YYYY',
                         )}
                       </td>
                       <td className="px-6 py-4">

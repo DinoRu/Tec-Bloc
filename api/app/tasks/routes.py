@@ -8,7 +8,7 @@ from openpyxl.reader.excel import load_workbook
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlmodel import select
+from sqlmodel import select, desc
 
 from app.auth.dependencies import AccessTokenBearer, RoleChecker, get_current_user
 from app.db.main import get_session
@@ -56,7 +56,7 @@ async def get_all_tasks(
 
 @task_router.get("/completed", response_model=List[TaskRead], dependencies=[all_roles_checker])
 async def get_completed_task(session: Annotated[AsyncSession, Depends(get_session)]):
-	stmt = select(Task).options(selectinload(Task.worker)).where(Task.is_completed == True).order_by(Task.created_at)
+	stmt = select(Task).options(selectinload(Task.worker)).where(Task.is_completed == True).order_by(desc(Task.created_at))
 	result = await session.execute(stmt)
 	tasks = result.scalars().all()
 	return tasks

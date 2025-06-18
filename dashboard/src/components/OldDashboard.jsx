@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { FaUserPlus, FaEdit, FaTrashAlt, FaKey } from 'react-icons/fa';
+import { FaUserPlus, FaEdit, FaTrashAlt } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import config from '../config/config';
 import axios from 'axios';
 import api from '../api';
-import { Modal } from './Modal'; // Composant Modal réutilisable
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -14,14 +13,6 @@ const Dashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 8;
-
-  // États pour la gestion du mot de passe
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -66,51 +57,6 @@ const Dashboard = () => {
       } catch (error) {
         alert(`Ошибка: ${error.response?.data?.message || error.message}`);
       }
-    }
-  };
-
-  // Ouvrir la modale de changement de mot de passe
-  const openPasswordModal = (user) => {
-    setSelectedUser(user);
-    setNewPassword('');
-    setConfirmPassword('');
-    setPasswordError('');
-    setPasswordSuccess('');
-    setPasswordModalOpen(true);
-  };
-
-  // Changer le mot de passe d'un utilisateur
-  const changeUserPassword = async () => {
-    // Validation
-    if (newPassword.length < 8) {
-      setPasswordError('Пароль должен содержать не менее 8 символов');
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('Пароли не совпадают');
-      return;
-    }
-
-    try {
-      const response = await api.patch(
-        `/auth/update-password/${selectedUser.uid}`,
-        { password: newPassword },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-          },
-        },
-      );
-
-      if (response.data && response.data.success) {
-        setPasswordSuccess('Пароль успешно обновлен!');
-        setTimeout(() => setPasswordModalOpen(false), 1500);
-      }
-    } catch (error) {
-      setPasswordError(
-        error.response?.data?.detail || 'Ошибка при обновлении пароля',
-      );
     }
   };
 
@@ -267,13 +213,6 @@ const Dashboard = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button
-                            onClick={() => openPasswordModal(user)}
-                            className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
-                            title="Изменить пароль"
-                          >
-                            <FaKey />
-                          </button>
-                          <button
                             onClick={() => navigate(`/edit-user/${user.uid}`)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                             title="Редактировать"
@@ -326,84 +265,6 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-
-      {/* Modal de changement de mot de passe */}
-      <Modal
-        isOpen={passwordModalOpen}
-        onClose={() => setPasswordModalOpen(false)}
-      >
-        <div className="p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            Изменить пароль для {selectedUser?.username}
-          </h2>
-
-          {passwordSuccess ? (
-            <div className="bg-green-50 p-3 rounded-lg text-green-700 mb-4">
-              {passwordSuccess}
-            </div>
-          ) : (
-            <>
-              {passwordError && (
-                <div className="bg-red-50 p-3 rounded-lg text-red-700 mb-4">
-                  {passwordError}
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="new-password"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Новый пароль
-                  </label>
-                  <input
-                    id="new-password"
-                    type="password"
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Введите новый пароль"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Минимум 8 символов
-                  </p>
-                </div>
-
-                <label
-                  htmlFor="confirm-password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Подтвердите пароль
-                </label>
-                <input
-                  id="confirm-password"
-                  type="password"
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Подтвердите новый пароль"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setPasswordModalOpen(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Отмена
-                </button>
-                <button
-                  onClick={changeUserPassword}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Сохранить пароль
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </Modal>
     </div>
   );
 };

@@ -31,7 +31,7 @@ services:
         ENV: docker
         DB_URL: postgresql+asyncpg://dino:tec-bloc12345!@db:5432/tec_bloc
       command: >
-        bash -c "uvicorn main:app --host=0.0.0.0 --port=8000 --workers=4"
+        bash -c "uvicorn main:app --host=0.0.0.0 --port=8000"
       depends_on:
         - db
       ports:

@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from sqlmodel import select, desc, delete
 
 from app.db.models import Task
@@ -120,7 +121,12 @@ class TaskService:
 		return  {}
 
 	async def get_tasks_completed(self, session: AsyncSession):
-		stmt = select(Task).where(Task.is_completed == True).order_by(desc(Task.created_at))
+		stmt = (
+			select(Task)
+			.options(selectinload(Task.worker))  # charge le worker
+			.where(Task.is_completed == True)
+			.order_by(desc(Task.created_at))
+		)
 		result = await session.execute(stmt)
 		tasks = result.scalars().all()
 		return tasks

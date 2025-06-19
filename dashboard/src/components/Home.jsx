@@ -1,4 +1,8 @@
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Add from './Add';
+import Download from './Download';
+import Delete from './Delete';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import 'dayjs/locale/ru';
@@ -8,13 +12,10 @@ import {
   FaSearch,
   FaChevronLeft,
   FaChevronRight,
+  FaUser,
 } from 'react-icons/fa';
 import { Button } from './Button';
-import Add from './Add';
-import Delete from './Delete';
-import Download from './Download';
 import { useAuth } from '../context/authContext';
-import { useEffect, useState } from 'react';
 import api from '../api';
 
 dayjs.extend(customParseFormat);
@@ -88,23 +89,20 @@ function Home() {
       setCurrentPage(currentPage - 1);
     }
   };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* En-tête */}
-        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
-          <div className="flex items-center mb-4 md:mb-0">
-            <div className="bg-blue-100 p-3 rounded-lg mr-4">
-              <div className="bg-blue-500 w-10 h-10 rounded-full flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="bg-white p-2 rounded-lg mr-4">
+              <div className="bg-gradient-to-r from-blue-500 to-indigo-600 w-10 h-10 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-xl">ТБ</span>
               </div>
             </div>
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-                Тех-Блок
-              </h1>
-              <p className="text-gray-600">
+              <h1 className="text-2xl md:text-3xl font-bold">Тех-Блок</h1>
+              <p className="text-blue-100">
                 {user
                   ? `Привет, ${user.username}!`
                   : 'Система управления задачами'}
@@ -112,31 +110,34 @@ function Home() {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex gap-3">
             {hasPermission(['admin']) && (
               <Button
                 onClick={() => navigate('/dashboard')}
-                className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-4 py-3 rounded-lg flex items-center shadow-md hover:shadow-lg transition-all"
+                className="bg-blue-500 text-blue-800 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-50 transition-colors"
               >
-                <FaUserShield className="mr-2" />
-                <span>Управление пользователями</span>
+                <FaUserShield />
+                <span className="hidden md:inline">
+                  Управление пользователями
+                </span>
               </Button>
             )}
 
             <button
               onClick={logout}
-              className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-3 rounded-lg flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
+              className="bg-re text-red-600 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-red-50 transition-colors"
             >
               <FaSignOutAlt />
-              <span>Выход</span>
+              <span className="hidden md:inline">Выход</span>
             </button>
           </div>
         </div>
+      </div>
 
-        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 h-1 w-full rounded-full mb-8"></div>
-
+      {/* Main Content */}
+      <div className="p-4 md:p-8">
         {/* Actions */}
-        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+        <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-md p-4 md:p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-3">
               {hasPermission(['admin', 'user']) && (
@@ -150,7 +151,7 @@ function Home() {
               {hasPermission(['admin']) && <Delete />}
             </div>
 
-            <div className="relative w-full md:w-auto">
+            <div className="relative w-full md:w-80">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <FaSearch className="text-gray-400" />
               </div>
@@ -165,26 +166,26 @@ function Home() {
           </div>
         </div>
 
-        {/* Tableau des tâches accomplies */}
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        {/* Tasks Table */}
+        <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
                 <tr>
-                  <th className="px-6 py-4 text-left font-semibold">
+                  <th className="px-4 py-3 text-left font-semibold">
                     Объект и работ
                   </th>
-                  <th className="px-6 py-4 text-left font-semibold">
+                  <th className="px-4 py-3 text-left font-semibold">
                     Тип работ
                   </th>
-                  <th className="px-6 py-4 text-left font-semibold">Адрес</th>
-                  <th className="px-6 py-4 text-left font-semibold">План</th>
-                  <th className="px-6 py-4 text-left font-semibold">
+                  <th className="px-4 py-3 text-left font-semibold">Адрес</th>
+                  {/* <th className="px-4 py-3 text-left font-semibold">План</th> */}
+                  <th className="px-4 py-3 text-left font-semibold">
                     Напряжение
                   </th>
-                  <th className="px-6 py-4 text-left font-semibold">Дата</th>
-                  <th className="px-6 py-4 text-left font-semibold">Фото</th>
-                  <th className="px-6 py-4 text-left font-semibold">
+                  <th className="px-4 py-3 text-left font-semibold">Дата</th>
+                  <th className="px-4 py-3 text-left font-semibold">Фото</th>
+                  <th className="px-4 py-3 text-left font-semibold">
                     Исполнитель
                   </th>
                 </tr>
@@ -192,28 +193,9 @@ function Home() {
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-8 text-center">
+                    <td colSpan="8" className="px-6 py-12 text-center">
                       <div className="flex justify-center items-center">
-                        <svg
-                          className="animate-spin h-8 w-8 text-blue-600"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v8H4z"
-                          ></path>
-                        </svg>
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                       </div>
                     </td>
                   </tr>
@@ -232,32 +214,32 @@ function Home() {
                       key={task.id}
                       className="hover:bg-blue-50 transition-colors"
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">
                           {task.dispatcher_name}
                         </div>
                         <div className="text-sm text-gray-500">{task.job}</div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
                           {task.work_type}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-gray-700">
+                      <td className="px-4 py-3 text-gray-700">
                         {task.address}
                       </td>
-                      <td className="px-6 py-4 text-gray-700">
+                      {/* <td className="px-4 py-3 text-gray-700">
                         {task.planner_date}
-                      </td>
-                      <td className="px-6 py-4 text-gray-700">
+                      </td> */}
+                      <td className="px-4 py-3 text-gray-700">
                         {task.voltage} КВ
                       </td>
-                      <td className="px-6 py-4 text-gray-700">
+                      <td className="px-4 py-3 text-gray-700">
                         {dayjs(task.completion_date, 'DD-MM-YYYY HH:mm').format(
                           'DD MMM YYYY',
                         )}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
                           {task.photos.map((photo, index) => (
                             <a
@@ -265,16 +247,19 @@ function Home() {
                               href={photo}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 text-sm bg-blue-50 px-2 py-1 rounded"
+                              className="text-blue-600 hover:text-blue-800 text-sm bg-blue-50 px-2 py-1 rounded flex items-center"
                             >
-                              Фото {index + 1}
+                              {/* <FaImage className="mr-1" /> */}
+                              <span>{index + 1}</span>
                             </a>
                           ))}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-3">
                         <div className="flex items-center">
-                          <div className="bg-gray-200 border-2 border-dashed rounded-xl w-8 h-8 mr-3" />
+                          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm mr-3">
+                            <FaUser />
+                          </div>
                           <span className="font-medium">
                             {task.worker?.username}
                           </span>
@@ -289,8 +274,8 @@ function Home() {
 
           {/* Pagination */}
           {filteredTasks.length > tasksPerPage && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-              <div className="text-sm text-gray-700">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200">
+              <div className="text-sm text-gray-700 mb-2 sm:mb-0">
                 Показано{' '}
                 <span className="font-medium">
                   {Math.min(indexOfFirstTask + 1, filteredTasks.length)}
@@ -322,7 +307,6 @@ function Home() {
                 </button>
 
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                  // Calcul pour afficher seulement 5 pages à la fois
                   let pageNum;
                   if (totalPages <= 5) {
                     pageNum = i + 1;
@@ -363,6 +347,14 @@ function Home() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-center">
+        <div className="max-w-7xl mx-auto">
+          <p>© 2023 Тех-Блок. Система управления задачами</p>
+          <p className="text-blue-200 text-sm mt-1">Версия 2.0.1</p>
         </div>
       </div>
     </div>

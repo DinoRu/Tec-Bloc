@@ -2,7 +2,7 @@ from io import BytesIO
 
 from openpyxl.workbook import Workbook
 
-from app.models.tasks import Task
+from app.db.models import Task
 from app.utils.draw_excel_table import draw_report_header
 
 

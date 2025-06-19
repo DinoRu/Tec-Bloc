@@ -103,6 +103,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const downloadReport = async () => {
+    try {
+      const response = await api.post(
+        '/task/download',
+        {},
+        { responseType: 'blob' },
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Reports.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Erreur lors du téléchargement :', error);
+      throw new Error('Ошибка при скачивании файла');
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('access_token');
     setUser(null);
@@ -125,6 +147,7 @@ export const AuthProvider = ({ children }) => {
         changePassword,
         createUser,
         deleteUser,
+        downloadReport,
       }}
     >
       {!loading && children}

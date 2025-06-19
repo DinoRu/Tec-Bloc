@@ -272,7 +272,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
             Управление пользователями

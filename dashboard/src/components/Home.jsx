@@ -92,8 +92,8 @@ function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+      <div className="w-screen bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-4">
+        <div className="w-screen mx-auto flex justify-between items-center">
           <div className="flex items-center">
             <div className="bg-white p-2 rounded-lg mr-4">
               <div className="bg-gradient-to-r from-blue-500 to-indigo-600 w-10 h-10 rounded-full flex items-center justify-center">
@@ -137,7 +137,7 @@ function Home() {
       {/* Main Content */}
       <div className="p-4 md:p-8">
         {/* Actions */}
-        <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-md p-4 md:p-6 mb-6">
+        <div className="w-screen mx-auto bg-white rounded-xl shadow-md p-4 md:p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap gap-3">
               {hasPermission(['admin', 'user']) && (
@@ -167,7 +167,7 @@ function Home() {
         </div>
 
         {/* Tasks Table */}
-        <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="w-screen mx-auto bg-white rounded-xl shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
@@ -352,7 +352,7 @@ function Home() {
 
       {/* Footer */}
       <div className="mt-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-700 text-white text-center">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-screen mx-auto">
           <p>© 2023 Тех-Блок. Система управления задачами</p>
           <p className="text-blue-200 text-sm mt-1">Версия 2.0.1</p>
         </div>
